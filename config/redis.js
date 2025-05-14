@@ -2,8 +2,10 @@ const { createClient } = require('@redis/client');
 
 // Créer un client Redis avec la nouvelle API
 const redisClient = createClient({
-  url: 'redis://localhost:6379',  // Connexion au serveur Redis local
-});
+ url: process.env.REDIS_URL, // Ex: 'redis://<user>:<password>@<host>:<port>'
+  socket: {
+    reconnectStrategy: retries => Math.min(retries * 100, 3000)
+  }});
 
 redisClient.on('error', (err) => {
   console.error('Erreur Redis:', err);
