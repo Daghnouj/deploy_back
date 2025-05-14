@@ -1,14 +1,14 @@
 const express = require("express");
-const connectDB = require("./config/db");
+const connectDB = require("../config/db");
 require("dotenv").config();
 const session = require("express-session");
 const path = require('path');
 const cors = require("cors");
 const http = require("http");
 const socketIo = require("socket.io");
-const { initSocket,getReceiverSocketId } = require("./socket/socket");
+const { initSocket,getReceiverSocketId } = require("../socket/socket");
 
-const passport = require("./config/passport");
+const passport = require("../config/passport");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const MongoStore = require('connect-mongo');
 
@@ -89,24 +89,24 @@ app.use((req, res, next) => {
   });
 
   const routes = {
-    auth: require("./routes/authRoutes"),
-    admin: require("./routes/adminRoutes"),
-    password: require("./routes/passwordRoutes"),
-    user: require("./routes/userRoutes"),
-    galerie: require("./routes/galerieRoutes"),
-    socialAuth: require("./routes/socialAuthRoutes"),
-    partenaire: require("./routes/partenaireRoutes"),
-    event: require("./routes/eventRoutes"),
-    post: require("./routes/postRoutes"),
-    booking: require("./routes/bookingRoutes"),
-    notification: require("./routes/notificationRoutes"),
-    subscription: require("./routes/subscriptionRoutes"),
-    webhook: require("./routes/webhookRoutes"),
-    availability: require("./routes/availabilityRoutes"),
-    contact: require("./routes/contactRoutes"),
-    message: require("./routes/messageRoutes"),
-    professional: require("./routes/professionalRoutes"),
-    maps: require("./routes/MapsRouter"),
+    auth: require("../routes/authRoutes"),
+    admin: require("../routes/adminRoutes"),
+    password: require("../routes/passwordRoutes"),
+    user: require("../routes/userRoutes"),
+    galerie: require("../routes/galerieRoutes"),
+    socialAuth: require("../routes/socialAuthRoutes"),
+    partenaire: require("../routes/partenaireRoutes"),
+    event: require("../routes/eventRoutes"),
+    post: require("../routes/postRoutes"),
+    booking: require("../routes/bookingRoutes"),
+    notification: require("../routes/notificationRoutes"),
+    subscription: require("../routes/subscriptionRoutes"),
+    webhook: require("../routes/webhookRoutes"),
+    availability: require("../routes/availabilityRoutes"),
+    contact: require("../routes/contactRoutes"),
+    message: require("../routes/messageRoutes"),
+    professional: require("../routes/professionalRoutes"),
+    maps: require("../routes/MapsRouter"),
   }; 
 
 // Définition des routes
