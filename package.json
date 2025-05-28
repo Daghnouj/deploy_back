@@ -2,7 +2,7 @@
   "name": "back_end",
   "version": "1.0.0",
   "description": "",
-"main": "src/index.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js"
@@ -13,6 +13,7 @@
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
+    "@google/generative-ai": "^0.24.1",
     "@redis/client": "^1.6.0",
     "axios": "^1.8.1",
     "bcrypt": "^5.1.1",
@@ -37,11 +38,13 @@
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
     "rate-limiter-flexible": "^6.2.1",
     "redis": "^4.7.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "stripe": "^17.7.0"
+    "stripe": "^17.7.0",
+    "twilio": "^5.6.1"
   },
   "devDependencies": {
     "artillery": "^2.0.22",
