@@ -118,8 +118,7 @@ const sendMessage = async (req, res) => {
       senderId,
       receiverId,
       text: text?.trim(),
-      image: req.file ? `${process.env.API_BASE_URL}/uploads/messages/${req.file.filename}` : null
-    });
+      image: req.file ? `/messages/${req.file.filename}` : null    });
 
     const savedMessage = await newMessage.save();
     const populated = await savedMessage.populate([
@@ -131,21 +130,25 @@ const sendMessage = async (req, res) => {
       _id: savedMessage._id.toString(),
       tempId,
       text: populated.text,
-      image: populated.image,
-      createdAt: new Date().toISOString(),
+ image: populated.image ? 
+    `${process.env.API_BASE_URL}/uploads/messages/${req.file.filename}` : 
+    null,
+         createdAt: new Date().toISOString(),
       senderId: {
         _id: populated.senderId._id.toString(),
         nom: populated.senderId.nom,
-        photo: populated.senderId.photo ? 
-          `${process.env.API_BASE_URL}/uploads/${populated.senderId.photo}` : 
-          `${process.env.API_BASE_URL}/default-avatar.png`
+     senderId: {
+    photo: populated.senderId.photo ? 
+      `${process.env.API_BASE_URL}/uploads/profiles/${populated.senderId.photo}` : 
+      `${process.env.API_BASE_URL}/default-avatar.png`
+  }
       },
       receiverId: {
         _id: populated.receiverId._id.toString(),
         nom: populated.receiverId.nom,
-        photo: populated.receiverId.photo ? 
-          `${process.env.API_BASE_URL}/uploads/${populated.receiverId.photo}` : 
-          `${process.env.API_BASE_URL}/default-avatar.png`
+        photo: populated.senderId.photo ? 
+      `${process.env.API_BASE_URL}/uploads/${populated.senderId.photo}?t=${Date.now()}` : 
+      `${process.env.API_BASE_URL}/default-avatar.png?t=${Date.now()}`
       }
     };
 

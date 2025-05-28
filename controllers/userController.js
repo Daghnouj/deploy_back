@@ -78,6 +78,7 @@ exports.updatePassword = async (req, res) => {
     console.log("Données reçues pour la mise à jour du mot de passe:", req.body);
     const { oldPassword, newPassword, confirmPassword } = req.body;
 
+    // Validation des entrées
     if (!oldPassword || !newPassword || !confirmPassword) {
       return res.status(400).json({ message: "Tous les champs sont requis." });
     }
@@ -86,25 +87,44 @@ exports.updatePassword = async (req, res) => {
       return res.status(400).json({ message: "Les nouveaux mots de passe ne correspondent pas." });
     }
 
-    const user = await User.findById(userId);
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères." });
+    }
+
+    // Récupération de l'utilisateur avec le mot de passe (si stocké différemment)
+    const user = await User.findById(userId).select('+mdp');
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
+    // Vérification de l'ancien mot de passe
     const isMatch = await bcrypt.compare(oldPassword, user.mdp);
     if (!isMatch) {
-      return res.status(400).json({ message: "Ancien mot de passe incorrect." });
+      return res.status(401).json({ message: "Ancien mot de passe incorrect." });
     }
 
+    // Hash du nouveau mot de passe
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.mdp = hashedPassword;
-    await user.save();
+    
+    // Mise à jour en désactivant la validation des autres champs
+    await User.findByIdAndUpdate(
+      userId,
+      { mdp: hashedPassword },
+      { 
+        runValidators: false, // Désactive la validation globale
+        context: 'query' // Nécessaire pour certaines versions de Mongoose
+      }
+    );
 
-    console.log("Mot de passe mis à jour avec succès pour l'utilisateur:", user);
+    console.log("Mot de passe mis à jour avec succès pour l'utilisateur:", userId);
     res.json({ message: "Mot de passe mis à jour avec succès." });
+
   } catch (error) {
     console.error("Erreur dans updatePassword:", error);
-    res.status(500).json({ message: "Erreur lors de la mise à jour du mot de passe", error });
+    res.status(500).json({ 
+      message: "Erreur lors de la mise à jour du mot de passe",
+      error: error.message // Ne renvoyez que le message d'erreur pour la sécurité
+    });
   }
 };
 
@@ -146,10 +166,37 @@ exports.deleteProfile = async (req, res) => {
 exports.deactivateAccount = async (req, res) => {
   try {
     const userId = req.params.userId;
+    const { password } = req.body;
+    
     console.log("Tentative de désactivation du compte de l'utilisateur:", userId);
-    const user = await User.findByIdAndUpdate(userId, { isActive: false }, { new: true }).select("-mdp");
-    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-    res.json({ message: "Compte désactivé définitivement.", user });
+    
+    // Vérifier le mot de passe si fourni
+    if (password) {
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+      
+      const isMatch = await bcrypt.compare(password, user.mdp);
+      if (!isMatch) return res.status(400).json({ message: "Mot de passe incorrect" });
+    }
+    
+    // Mettre à jour avec la date de désactivation
+    const updatedUser = await User.findByIdAndUpdate(
+      userId, 
+      { 
+        isActive: false,
+        deactivatedAt: new Date(),
+        isOnline: false // Déconnecter l'utilisateur
+      }, 
+      { new: true }
+    ).select("-mdp");
+    
+    if (!updatedUser) return res.status(404).json({ message: "Utilisateur non trouvé" });
+    
+    res.json({ 
+      message: "Compte désactivé. Vous avez 2 mois pour le réactiver avant suppression définitive.", 
+      user: updatedUser,
+      deactivatedAt: updatedUser.deactivatedAt
+    });
   } catch (error) {
     console.error("Erreur dans deactivateAccount:", error);
     res.status(500).json({ message: "Erreur lors de la désactivation du compte", error });
@@ -161,9 +208,22 @@ exports.activateAccount = async (req, res) => {
   try {
     const userId = req.params.userId;
     console.log("Tentative d'activation du compte de l'utilisateur:", userId);
-    const user = await User.findByIdAndUpdate(userId, { isActive: true }, { new: true }).select("-mdp");
+    
+    const user = await User.findByIdAndUpdate(
+      userId, 
+      { 
+        isActive: true,
+        deactivatedAt: null // Réinitialiser la date de désactivation
+      }, 
+      { new: true }
+    ).select("-mdp");
+    
     if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-    res.json({ message: "Compte activé.", user });
+    
+    res.json({ 
+      message: "Compte activé avec succès.", 
+      user 
+    });
   } catch (error) {
     console.error("Erreur dans activateAccount:", error);
     res.status(500).json({ message: "Erreur lors de l'activation du compte", error });

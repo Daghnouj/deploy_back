@@ -19,3 +19,4 @@ router.put("/:id", upload.single("logos"), partenaireController.updatePartenaire
 router.delete("/:id", partenaireController.deletePartenaire);
 
 module.exports = router;
+  

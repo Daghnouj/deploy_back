@@ -13,6 +13,7 @@ const requestSchema = new mongoose.Schema({
   date_obtention_diplome: { type: Date },
   biographie: { type: String },
   document: { type: String },
+  services: [{ type: String }],
 }, { timestamps: true });  
 
 

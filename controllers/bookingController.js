@@ -2,6 +2,7 @@ const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Availability = require('../models/Availability');
 const mongoose = require('mongoose');
+const { sendBookingStatusSMS } = require('../utils/smsService');
 
 exports.getSpecialites = async (req, res) => {
   try {
@@ -209,19 +210,25 @@ exports.updateBookingStatus = async (req, res) => {
       { _id: id, therapistId: req.user.id },
       { status },
       { new: true, runValidators: true }
-    );
+    ).populate('userId', 'nom prenom');
 
     if (!booking) {
       return res.status(404).json({ error: 'Réservation non trouvée' });
     }
-
+if (['confirmed', 'cancelled'].includes(status)) {
+      await sendBookingStatusSMS(
+        booking.phone, 
+        status,
+        `${booking.prenom} ${booking.nom}`
+      );
+    }
     // Correction ici : Ajout du champ summary requis
     if (status === 'cancelled') {
       await Availability.create({
         user: booking.therapistId,
         start: booking.date,
         end: new Date(booking.date.getTime() + 60*60*1000),
-        summary: "Consultation annulée" // Champ requis ajouté
+        summary: "Consultation annulée" 
       });
     }
 

@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Request = require("../models/Request");
 
 
+
 exports.signup = async (req, res) => {
   try {
     const { nom, email, mdp, dateNaissance, adresse, telephone, role, specialite, situation_professionnelle, intitule_diplome, nom_etablissement, date_obtention_diplome, biographie } = req.body;
@@ -69,10 +70,32 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, mdp } = req.body;
+    const { email, mdp,reactivate  } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "Utilisateur non trouvé" });
 
+    if (!user) return res.status(400).json({ message: "Utilisateur non trouvé" });
+    if (!user.isActive) {
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+      if (user.deactivatedAt && user.deactivatedAt > twoMonthsAgo) {
+        if (reactivate) {
+          user.isActive = true;
+          user.deactivatedAt = undefined;
+          await user.save();
+        } else {
+          return res.status(403).json({ 
+            message: "Votre compte est désactivé. Souhaitez-vous le réactiver ?",
+            canReactivate: true 
+          });
+        }
+      } else {
+        return res.status(403).json({ 
+          message: "Compte désactivé depuis plus de 2 mois. Réactivation impossible." 
+        });
+      }
+    }
     const isMatch = await bcrypt.compare(mdp, user.mdp);
     if (!isMatch) return res.status(400).json({ message: "Mot de passe incorrect" });
 
@@ -133,28 +156,28 @@ exports.login = async (req, res) => {
   };
 
 exports.logoutUser = async (req, res) => {
-    try {
-      const pingResponse = await redisClient.ping();
-      console.log('Ping Redis:', pingResponse);
-  
-      const authHeader = req.header("Authorization");
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(400).json({ msg: "Token manquant ou mal formaté" });
-      }
-      const token = authHeader.split(" ")[1];
-  
-      // Décoder le token pour obtenir l'ID utilisateur
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // Mettre à jour le statut de l'utilisateur : offline
-      await User.findByIdAndUpdate(decoded.id, { isOnline: false });
-  
-      const tokenExpiry = 3600;
-      await redisClient.set(token, "blacklisted", { EX: tokenExpiry });
-  
-      return res.status(200).json({ msg: "Déconnexion réussie" });
-    } catch (error) {
-      console.error("Erreur lors du logout:", error);
-      return res.status(500).json({ msg: "Erreur interne du serveur" });
-    }
-  };
-  
+  try {
+    // Utilisation de l'utilisateur attaché par le middleware
+    await User.findByIdAndUpdate(
+      req.user.id,
+      { 
+    isOnline: false,
+    lastLogin: Date.now() 
+  },
+  { 
+    runValidators: true, 
+    new: true 
+  }
+    );
+
+    res.clearCookie("token");
+    return res.status(200).json({ message: "Déconnexion réussie" });
+
+  } catch (error) {
+    console.error("Erreur lors de la déconnexion:", error);
+    return res.status(500).json({ 
+      message: "Erreur serveur",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};

@@ -1,25 +1,22 @@
 const multer = require('multer');
 const path = require('path');
 
-// Configuration du stockage avec destination dynamique
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-   
+    // Correction du traitement pour adminPhoto
     if (file.fieldname === 'video') {
       cb(null, 'uploads/videos/');
     } else if (file.fieldname === 'logo') {
       cb(null, 'uploads/logos/');
     } else if (file.fieldname === 'photo') {
       cb(null, 'uploads/events/');
-    } 
-    if (file.fieldname === 'logos') { 
-      cb(null, 'uploads/partenaires/');}
-    else if (file.fieldname === "adminPhoto") {
-      uploadPath = "uploads/admins/";
-    }
-    else if (file.fieldname === "messageImage") {
-      cb(null, 'uploads/messages/');}    
-    else {
+    } else if (file.fieldname === 'logos') { 
+      cb(null, 'uploads/partenaires/');
+    } else if (file.fieldname === "adminPhoto") {
+      cb(null, 'uploads/admins/'); // Correction ici
+    } else if (file.fieldname === "messageImage") {
+      cb(null, 'uploads/messages/');
+    } else {
       cb(null, 'uploads/others/');
     }
   },
@@ -28,32 +25,34 @@ const storage = multer.diskStorage({
   }
 });
 
-// Configuration du filtre pour autoriser les types de fichiers selon le champ
 const fileFilter = (req, file, cb) => {
+  // Autorisation explicite du champ 'photo'
+  const allowedImageFields = ['logo', 'photo', 'adminPhoto', 'logos', 'messageImage'];
+  
   if (file.fieldname === 'video') {
-    if (file.mimetype.startsWith('video/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Le fichier doit être une vidéo !'), false);
-    }
-  } else if (file.fieldname === 'logo' || file.fieldname === 'photo' || file.fieldname === 'adminPhoto' || file.fieldname === 'logos' || file.fieldname === 'messageImage') {
+    file.mimetype.startsWith('video/') 
+      ? cb(null, true)
+      : cb(new Error('Le fichier doit être une vidéo !'), false);
+  } 
+  else if (allowedImageFields.includes(file.fieldname)) {
     const allowedTypes = /jpeg|jpg|png|gif/;
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedTypes.test(file.mimetype) && allowedTypes.test(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Le fichier doit être une image !'), false);
-    }
-  } else {
+    allowedTypes.test(file.mimetype) && allowedTypes.test(ext)
+      ? cb(null, true)
+      : cb(new Error('Le fichier doit être une image !'), false);
+  } 
+  else {
     cb(new Error('Champ non supporté'), false);
   }
 };
 
+// Correction de la configuration Multer
 const upload = multer({
   storage,
   fileFilter,
-  fileSize: 5 * 1024 * 1024, 
-  limits: { fileSize: 100 * 1024 * 1024 } // Limite de taille générale (100MB)
+  limits: { 
+    fileSize: 100 * 1024 * 1024 // 100MB
+  }
 });
 
 module.exports = upload;

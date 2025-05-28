@@ -1,17 +1,16 @@
 const express = require("express");
-const connectDB = require("../config/db");
+const connectDB = require("./config/db");
 require("dotenv").config();
 const session = require("express-session");
 const path = require('path');
 const cors = require("cors");
 const http = require("http");
 const socketIo = require("socket.io");
-const { initSocket,getReceiverSocketId } = require("../socket/socket");
+const { initSocket,getReceiverSocketId } = require("./socket/socket");
 
-const passport = require("../config/passport");
+const passport = require("./config/passport");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const MongoStore = require('connect-mongo');
-
 
 const app = express();
 const server = http.createServer(app);
@@ -29,9 +28,9 @@ app.use(cors({
   }));
 
 // Page d'accueil
-// app.get("/", (req, res) => {
-//     res.sendFile(__dirname + "/public/subcription.html");
-// });
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/subcription.html");
+});
 
 // Gestion des sessions
 app.use(session({
@@ -89,24 +88,24 @@ app.use((req, res, next) => {
   });
 
   const routes = {
-    auth: require("../routes/authRoutes"),
-    admin: require("../routes/adminRoutes"),
-    password: require("../routes/passwordRoutes"),
-    user: require("../routes/userRoutes"),
-    galerie: require("../routes/galerieRoutes"),
-    socialAuth: require("../routes/socialAuthRoutes"),
-    partenaire: require("../routes/partenaireRoutes"),
-    event: require("../routes/eventRoutes"),
-    post: require("../routes/postRoutes"),
-    booking: require("../routes/bookingRoutes"),
-    notification: require("../routes/notificationRoutes"),
-    subscription: require("../routes/subscriptionRoutes"),
-    webhook: require("../routes/webhookRoutes"),
-    availability: require("../routes/availabilityRoutes"),
-    contact: require("../routes/contactRoutes"),
-    message: require("../routes/messageRoutes"),
-    professional: require("../routes/professionalRoutes"),
-    maps: require("../routes/MapsRouter"),
+    auth: require("./routes/authRoutes"),
+    admin: require("./routes/adminRoutes"),
+    password: require("./routes/passwordRoutes"),
+    user: require("./routes/userRoutes"),
+    galerie: require("./routes/galerieRoutes"),
+    socialAuth: require("./routes/socialAuthRoutes"),
+    partenaire: require("./routes/partenaireRoutes"),
+    post: require("./routes/postRoutes"),
+    booking: require("./routes/bookingRoutes"),
+    notification: require("./routes/notificationRoutes"),
+    subscription: require("./routes/subscriptionRoutes"),
+    availability: require("./routes/availabilityRoutes"),
+    contact: require("./routes/contactRoutes"),
+    message: require("./routes/messageRoutes"),
+    professional: require("./routes/professionalRoutes"),
+    maps: require("./routes/MapsRouter"),
+    chat: require("./routes/chatRoutes"),
+    event: require("./routes/eventRoutes"),
   }; 
 
 // Définition des routes
@@ -117,28 +116,31 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/user", routes.user);
 app.use("/api/galerie", routes.galerie);
 app.use("/api/partenaires", routes.partenaire);
-app.use("/api/events", routes.event);
 app.use("/api/posts", routes.post);
 app.use("/api/booking", routes.booking);
 app.use("/api/availability", routes.availability);
 app.use("/api/notifications", routes.notification); 
 app.use("/api/subscriptions", routes.subscription);
-app.use("/api/webhook", routes.webhook);
 app.use("/api/contact", routes.contact);
 app.use("/api/messages", routes.message);
 app.use("/api/professionals", routes.professional);
 app.use("/api/maps", routes.maps);
+app.use("/api/chat", routes.chat);
+app.use("/api/events", routes.event);
 
 
 // Routes d'authentification OAuth
-app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+app.get("/auth/google", passport.authenticate("google", { scope: ['profile', 'email'],session: false}));
 app.get("/auth/facebook", passport.authenticate("facebook", { scope: ["email"] }));
 
-app.get("/auth/google/callback",
-    passport.authenticate("google", { session: false, failureRedirect: "/login-failure" }),
-    (req, res) => {
-        res.redirect(`http://localhost:5173/oauth-redirect?token=${req.user.token}&role=${req.user.role}`);
-    }
+app.get("/auth/google/callback", 
+  passport.authenticate("google", { 
+    session: false,
+    failureRedirect: "/login-failure"
+  }),
+  (req, res) => {
+    res.redirect(`http://localhost:5173/oauth-redirect?token=${req.user.token}&role=${req.user.role}`);
+  }
 );
 
 app.get("/auth/facebook/callback",

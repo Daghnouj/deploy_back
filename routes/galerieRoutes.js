@@ -1,34 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const galerieController = require('../controllers/galerieController');
-const upload = require('../config/multerConfig');
-const authMiddleware = require('../middlewares/authMiddleware');
-const View = require("../models/View");
 const { protect } = require('../middlewares/protect');
 
-// Routes publiques
+// Public routes
 router.get('/', galerieController.getGaleriesByCategorie);
-router.get('/top', galerieController.getTopGaleries);
+router.get('/total', galerieController.getTotalVideos); // New route
 router.post('/:id/view', galerieController.trackView);
-// Route protégée pour utilisateurs connectés
+
+// Protected routes
 router.get('/:id', protect, galerieController.getGalerieById);
 
-// Routes réservées aux administrateurs
-router.post('/',
-    upload.single('video'),
-    galerieController.createGalerie
-);
+// Admin routes
+router.post('/', galerieController.createGalerie);
+router.put('/:id', galerieController.updateGalerie);
+router.delete('/:id', galerieController.deleteGalerie);
 
-router.put('/:id', 
-    upload.single('video'),
-    galerieController.updateGalerie
-);
-
-router.delete('/:id', 
-    galerieController.deleteGalerie
-);
-
-
-
-  
 module.exports = router;

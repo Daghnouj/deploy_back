@@ -2,7 +2,7 @@ const Partenaire = require("../models/Partenaire");
 
 exports.createPartenaire = async (req, res) => {
   try {
-    const { nom, email, telephone, adresse, description, service } = req.body;
+    const { link, nom, email, telephone, adresse, description, service } = req.body;
     const logo = req.file ? req.file.filename : null;
 
     // Vérifier si un partenaire avec cet email existe déjà
@@ -12,6 +12,7 @@ exports.createPartenaire = async (req, res) => {
     }
 
     const partenaire = new Partenaire({
+      link,
       nom,
       email,
       telephone,
@@ -53,13 +54,13 @@ exports.getPartenaireById = async (req, res) => {
 
 exports.updatePartenaire = async (req, res) => {
   try {
-    const { nom, email, telephone, adresse, description, service } = req.body;
+    const {link, nom, email, telephone, adresse, description, service } = req.body;
     // Si un nouveau logo est uploadé, utilisez-le sinon gardez l'existant
     const logo = req.file ? req.file.filename : req.body.logo;
 
     const partenaire = await Partenaire.findByIdAndUpdate(
       req.params.id,
-      { nom, email, telephone, adresse, description, service, logo },
+      { link, nom, email, telephone, adresse, description, service, logo },
       { new: true }
     );
     if (!partenaire) {

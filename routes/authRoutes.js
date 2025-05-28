@@ -9,8 +9,8 @@ require('dotenv').config();
 
 
 const upload = multer({ dest: "uploads/" });
-const authMiddleware = require("../middlewares/authMiddleware");
 const authController = require("../controllers/authController");
+const { protect } = require("../middlewares/protect");
 
 console.log(authController); // Vérifier ce qui est réellement importé
 
@@ -18,11 +18,11 @@ const { signup, login, submitRequest } = authController;
 
 // router.post("/signup", signup);
 router.post("/login", login);
-router.post("/request", authMiddleware, upload.single("document"), submitRequest);
-router.post("/logout", authMiddleware, authController.logoutUser); 
+router.post("/request", protect, upload.single("document"), submitRequest);
+router.post("/logout", protect, authController.logoutUser); 
 router.post("/signup", upload.single('documents'), authController.signup);
 // routes/auth.js
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', protect, async (req, res) => {
     try {
       const user = await User.findById(req.user.id).select('-mdp');
       res.json(user);
