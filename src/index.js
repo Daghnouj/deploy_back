@@ -28,9 +28,9 @@ app.use(cors({
   }));
 
 // Page d'accueil
-app.get("/", (req, res) => {
-    res.sendFile(__dirname + "/public/subcription.html");
-});
+// app.get("/", (req, res) => {
+//     res.sendFile(__dirname + "/public/subcription.html");
+// });
 
 // Gestion des sessions
 app.use(session({
