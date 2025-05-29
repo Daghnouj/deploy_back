@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://brilliant-fudge-0af166.netlify.app" // Ajout du domaine Netlify
+  "https://shiny-douhua-c771b5.netlify.app" // Ajout du domaine Netlify
 ];
 
 // Configuration CORS étendue
