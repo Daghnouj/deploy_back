@@ -4,7 +4,6 @@ const multer = require("multer");
 const userController = require("../controllers/userController");
 const { protect } = require("../middlewares/protect");
 const User = require("../models/User");
-const upload = require("../config/multerConfig");
 
 
 // Configuration de multer pour l'upload de fichiers
