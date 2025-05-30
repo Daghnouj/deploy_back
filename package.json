@@ -5,9 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "fix:permissions": "node fix-permissions.js",
-  "prestart": "npm run fix:permissions"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",

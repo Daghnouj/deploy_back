@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://unique-churros-731ac3.netlify.app" 
+  "https://unique-churros-731ac3.netlify.app"
 ];
 
 // Configuration CORS étendue
@@ -77,22 +77,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
-// app.use("/uploads", express.static("uploads"));
-const getUploadsPath = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // Vérifier si /data/uploads est accessible
-    try {
-      fs.accessSync('/data/uploads', fs.constants.R_OK);
-      return '/data/uploads';
-    } catch {
-      return '/tmp/uploads';
-    }
-  }
-  return path.join(__dirname, 'uploads');
-};
-
-app.use('/uploads', express.static(getUploadsPath()));
-
+app.use("/uploads", express.static("uploads"));
 
 // Configuration WebSocket
 const io = socketIo(server, {

@@ -1,85 +1,32 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Fonction sécurisée pour créer des dossiers
-const safeCreateDir = (dirPath) => {
-  try {
-    if (!fs.existsSync(dirPath)) {
-      // Création avec permissions étendues
-      fs.mkdirSync(dirPath, { 
-        recursive: true,
-        mode: 0o755 // rwxr-xr-x
-      });
-      console.log(`📁 Dossier créé: ${dirPath}`);
-    }
-  } catch (err) {
-    console.error(`❌ Erreur création dossier: ${err.message}`);
-    
-    // Solution de secours pour Render
-    if (process.env.NODE_ENV === 'production') {
-      console.log("🔄 Utilisation du dossier temporaire /tmp/uploads");
-      return '/tmp/uploads';
-    }
-    throw err;
-  }
-};
-
-// Détermination du chemin de base
-const getBaseDir = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // Essayer /data/uploads, sinon utiliser /tmp
-    const dataDir = '/data/uploads';
-    try {
-      safeCreateDir(dataDir);
-      return dataDir;
-    } catch {
-      return '/tmp/uploads';
-    }
-  }
-  return path.join(__dirname, '../uploads');
-};
-
-const baseDir = getBaseDir();
-
-// Création des sous-dossiers
-const createUploadDirs = () => {
-  const dirs = ['videos', 'logos', 'events', 'partenaires', 'admins', 'messages', 'others'];
-  
-  dirs.forEach(dir => {
-    const dirPath = path.join(baseDir, dir);
-    safeCreateDir(dirPath);
-  });
-};
-
-createUploadDirs();
-
-// Configuration Multer (inchangée)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const fieldToFolder = {
-      'video': 'videos',
-      'logo': 'logos',
-      'photo': 'events',
-      'logos': 'partenaires',
-      'adminPhoto': 'admins',
-      'messageImage': 'messages'
-    };
-    
-    const folder = fieldToFolder[file.fieldname] || 'others';
-    const fullPath = path.join(baseDir, folder);
-    safeCreateDir(fullPath);
-    cb(null, fullPath);
+    // Correction du traitement pour adminPhoto
+    if (file.fieldname === 'video') {
+      cb(null, 'uploads/videos/');
+    } else if (file.fieldname === 'logo') {
+      cb(null, 'uploads/logos/');
+    } else if (file.fieldname === 'photo') {
+      cb(null, 'uploads/events/');
+    } else if (file.fieldname === 'logos') { 
+      cb(null, 'uploads/partenaires/');
+    } else if (file.fieldname === "adminPhoto") {
+      cb(null, 'uploads/admins/'); // Correction ici
+    } else if (file.fieldname === "messageImage") {
+      cb(null, 'uploads/messages/');
+    } else {
+      cb(null, 'uploads/others/');
+    }
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const extension = path.extname(file.originalname);
-    cb(null, uniqueSuffix + extension);
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
-// Filtrage des fichiers (inchangé)
 const fileFilter = (req, file, cb) => {
+  // Autorisation explicite du champ 'photo'
   const allowedImageFields = ['logo', 'photo', 'adminPhoto', 'logos', 'messageImage'];
   
   if (file.fieldname === 'video') {
@@ -88,17 +35,18 @@ const fileFilter = (req, file, cb) => {
       : cb(new Error('Le fichier doit être une vidéo !'), false);
   } 
   else if (allowedImageFields.includes(file.fieldname)) {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    allowedTypes.includes(file.mimetype)
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const ext = path.extname(file.originalname).toLowerCase();
+    allowedTypes.test(file.mimetype) && allowedTypes.test(ext)
       ? cb(null, true)
-      : cb(new Error('Le fichier doit être une image (JPEG, PNG, GIF) !'), false);
+      : cb(new Error('Le fichier doit être une image !'), false);
   } 
   else {
     cb(new Error('Champ non supporté'), false);
   }
 };
 
-// Initialisation de Multer (inchangée)
+// Correction de la configuration Multer
 const upload = multer({
   storage,
   fileFilter,
