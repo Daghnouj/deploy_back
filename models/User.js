@@ -91,8 +91,10 @@ UserSchema.index(
   { oauthProvider: 1, oauthId: 1 },
   {  
     unique: true,
-    partialFilterExpression: { oauthId: { $exists: true } }
+    partialFilterExpression: { 
+      oauthId: { $exists: true, $ne: null } // Exclut les valeurs null
+    }
   }
 );
 
-module.exports = mongoose.model("User", UserSchema);  
+module.exports = mongoose.model("User", UserSchema);   
