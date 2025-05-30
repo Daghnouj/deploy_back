@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
-
+const cloudinary = require("../config/cloudinary");
 const mongoose = require("mongoose");
 
 exports.getProfile = async (req, res) => {
@@ -132,17 +132,29 @@ exports.updatePassword = async (req, res) => {
 exports.updateProfilePhoto = async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log("Tentative de mise à jour de la photo de profil");
     if (!req.file) return res.status(400).json({ message: "Aucune image fournie" });
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { photo: req.file.filename },
-      { new: true }
-    ).select("-mdp");
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
 
-    console.log("Photo de profil mise à jour avec succès:", user);
-    res.json({ message: "Photo mise à jour", photo: user.photo });
+    // Supprimer l'ancienne photo de Cloudinary si elle existe
+    if (user.photoPublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.photoPublicId);
+      } catch (error) {
+        console.error("Erreur lors de la suppression de l'ancienne image :", error);
+      }
+    }
+
+    // Mettre à jour avec les nouvelles données Cloudinary
+    user.photo = req.file.path; // URL sécurisée
+    user.photoPublicId = req.file.filename; // public_id
+    await user.save();
+
+    res.json({ 
+      message: "Photo de profil mise à jour avec succès", 
+      photo: user.photo 
+    });
   } catch (error) {
     console.error("Erreur dans updateProfilePhoto:", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -153,7 +165,18 @@ exports.updateProfilePhoto = async (req, res) => {
 exports.deleteProfile = async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log("Tentative de suppression du profil de l'utilisateur:", userId);
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+    // Supprimer la photo de Cloudinary
+    if (user.photoPublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.photoPublicId);
+      } catch (error) {
+        console.error("Erreur lors de la suppression de la photo :", error);
+      }
+    }
+
     await User.findByIdAndDelete(userId);
     res.json({ message: "Compte supprimé avec succès" });
   } catch (error) {
@@ -166,40 +189,34 @@ exports.deleteProfile = async (req, res) => {
 exports.deactivateAccount = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const { password } = req.body;
-    
-    console.log("Tentative de désactivation du compte de l'utilisateur:", userId);
-    
-    // Vérifier le mot de passe si fourni
-    if (password) {
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
-      
-      const isMatch = await bcrypt.compare(password, user.mdp);
-      if (!isMatch) return res.status(400).json({ message: "Mot de passe incorrect" });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+    // Supprimer la photo de Cloudinary
+    if (user.photoPublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.photoPublicId);
+      } catch (error) {
+        console.error("Erreur lors de la suppression de la photo :", error);
+      }
     }
-    
+
     // Mettre à jour avec la date de désactivation
-    const updatedUser = await User.findByIdAndUpdate(
-      userId, 
-      { 
-        isActive: false,
-        deactivatedAt: new Date(),
-        isOnline: false // Déconnecter l'utilisateur
-      }, 
-      { new: true }
-    ).select("-mdp");
+    user.isActive = false;
+    user.deactivatedAt = new Date();
+    user.isOnline = false;
+    user.photo = null;
+    user.photoPublicId = null;
     
-    if (!updatedUser) return res.status(404).json({ message: "Utilisateur non trouvé" });
-    
+    await user.save();
+
     res.json({ 
       message: "Compte désactivé. Vous avez 2 mois pour le réactiver avant suppression définitive.", 
-      user: updatedUser,
-      deactivatedAt: updatedUser.deactivatedAt
+      user,
+      deactivatedAt: user.deactivatedAt
     });
   } catch (error) {
-    console.error("Erreur dans deactivateAccount:", error);
-    res.status(500).json({ message: "Erreur lors de la désactivation du compte", error });
+    res.status(500).json({ message: "Erreur lors de la désactivation du compte" });
   }
 };
 
@@ -259,34 +276,21 @@ exports.getUserById = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
   try {
-    console.log('[CURRENT USER] Récupération utilisateur connecté');
-    
     const user = await User.findById(req.user._id)
       .select('-mdp -__v -createdAt -updatedAt')
       .lean();
 
-    if (!user) {
-      console.log('[CURRENT USER] Utilisateur non trouvé');
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
-    }
+    if (!user) return res.status(404).json({ message: 'Utilisateur non trouvé' });
 
-    // Normalisation de l'ID et de l'URL de la photo
     const processedUser = {
       ...user,
       _id: user._id.toString(),
-      photo: user.photo 
-        ? `${process.env.API_BASE_URL}/uploads/${user.photo}`
-        : `${process.env.API_BASE_URL}/default-avatar.png`
+      // Utilise directement l'URL Cloudinary
+      photo: user.photo || `${process.env.API_BASE_URL}/default-avatar.png`
     };
 
-    console.log('[CURRENT USER] Utilisateur trouvé:', processedUser.email);
     res.json(processedUser);
-
   } catch (error) {
-    console.error('[CURRENT USER] Erreur serveur:', error);
-    res.status(500).json({ 
-      message: 'Erreur serveur',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
