@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://lighthearted-selkie-fca473.netlify.app" // Ajout du domaine Netlify
+  "https://lighthearted-selkie-fca473.netlify.app" 
 ];
 
 // Configuration CORS étendue
@@ -77,7 +77,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, 'public')));
-app.use("/uploads", express.static("uploads"));
+// app.use("/uploads", express.static("uploads"));
+const getUploadsPath = () => {
+  return process.env.NODE_ENV === 'production' 
+    ? '/data/uploads' 
+    : path.join(__dirname, 'uploads');
+};
+
+app.use('/uploads', express.static(getUploadsPath()));
+
 
 // Configuration WebSocket
 const io = socketIo(server, {
