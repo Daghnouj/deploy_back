@@ -148,8 +148,8 @@ app.use("/api/chat", routes.chat);
 app.use("/api/events", routes.event);
 
 // Routes d'authentification OAuth
-app.get("api/auth/google", passport.authenticate("google", { scope: ['profile', 'email'], session: false }));
-app.get("api/auth/facebook", passport.authenticate("facebook", { scope: ["email"] }));
+app.get("/auth/google", passport.authenticate("google", { scope: ['profile', 'email'], session: false }));
+app.get("/auth/facebook", passport.authenticate("facebook", { scope: ["email"] }));
 
 // Middleware pour déterminer dynamiquement l'URL de redirection
 const getRedirectUrl = (req) => {
@@ -159,7 +159,7 @@ const getRedirectUrl = (req) => {
   return `${frontendBaseUrl}/oauth-redirect`;
 };
 
-app.get("api/auth/google/callback", 
+app.get("/auth/google/callback", 
   passport.authenticate("google", { 
     session: false,
     failureRedirect: "/login-failure"
@@ -170,7 +170,7 @@ app.get("api/auth/google/callback",
   }
 );
 
-app.get("api/auth/facebook/callback",
+app.get("/auth/facebook/callback",
   passport.authenticate("facebook", { session: false, failureRedirect: "/login-failure" }),
   (req, res) => {
     const redirectUrl = `${getRedirectUrl(req)}?token=${req.user.token}&role=${req.user.role}`;
