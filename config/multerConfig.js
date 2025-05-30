@@ -2,49 +2,59 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Détermination du chemin de base dynamique
-const getBaseDir = () => {
-  // En production: utilise le volume persistant de Render
-  if (process.env.NODE_ENV === 'production') {
-    return '/data/uploads';
+// Fonction sécurisée pour créer des dossiers
+const safeCreateDir = (dirPath) => {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      // Création avec permissions étendues
+      fs.mkdirSync(dirPath, { 
+        recursive: true,
+        mode: 0o755 // rwxr-xr-x
+      });
+      console.log(`📁 Dossier créé: ${dirPath}`);
+    }
+  } catch (err) {
+    console.error(`❌ Erreur création dossier: ${err.message}`);
+    
+    // Solution de secours pour Render
+    if (process.env.NODE_ENV === 'production') {
+      console.log("🔄 Utilisation du dossier temporaire /tmp/uploads");
+      return '/tmp/uploads';
+    }
+    throw err;
   }
-  // En développement: dossier local
+};
+
+// Détermination du chemin de base
+const getBaseDir = () => {
+  if (process.env.NODE_ENV === 'production') {
+    // Essayer /data/uploads, sinon utiliser /tmp
+    const dataDir = '/data/uploads';
+    try {
+      safeCreateDir(dataDir);
+      return dataDir;
+    } catch {
+      return '/tmp/uploads';
+    }
+  }
   return path.join(__dirname, '../uploads');
 };
 
 const baseDir = getBaseDir();
 
-// Création des dossiers nécessaires
+// Création des sous-dossiers
 const createUploadDirs = () => {
-  const dirs = [
-    'videos',
-    'logos',
-    'events',
-    'partenaires',
-    'admins',
-    'messages',
-    'others'
-  ];
-
-  // Créer le dossier principal s'il n'existe pas
-  if (!fs.existsSync(baseDir)) {
-    fs.mkdirSync(baseDir, { recursive: true });
-    console.log(`📁 Dossier principal créé: ${baseDir}`);
-  }
+  const dirs = ['videos', 'logos', 'events', 'partenaires', 'admins', 'messages', 'others'];
   
-  // Créer les sous-dossiers
   dirs.forEach(dir => {
     const dirPath = path.join(baseDir, dir);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`📂 Sous-dossier créé: ${dirPath}`);
-    }
+    safeCreateDir(dirPath);
   });
 };
 
 createUploadDirs();
 
-// Configuration du stockage Multer
+// Configuration Multer (inchangée)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const fieldToFolder = {
@@ -58,12 +68,7 @@ const storage = multer.diskStorage({
     
     const folder = fieldToFolder[file.fieldname] || 'others';
     const fullPath = path.join(baseDir, folder);
-    
-    // S'assurer que le dossier existe
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(fullPath, { recursive: true });
-    }
-    
+    safeCreateDir(fullPath);
     cb(null, fullPath);
   },
   filename: (req, file, cb) => {
@@ -73,7 +78,7 @@ const storage = multer.diskStorage({
   }
 });
 
-// Filtrage des fichiers
+// Filtrage des fichiers (inchangé)
 const fileFilter = (req, file, cb) => {
   const allowedImageFields = ['logo', 'photo', 'adminPhoto', 'logos', 'messageImage'];
   
@@ -93,7 +98,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Initialisation de Multer
+// Initialisation de Multer (inchangée)
 const upload = multer({
   storage,
   fileFilter,

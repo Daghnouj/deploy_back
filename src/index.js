@@ -79,9 +79,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 // app.use("/uploads", express.static("uploads"));
 const getUploadsPath = () => {
-  return process.env.NODE_ENV === 'production' 
-    ? '/data/uploads' 
-    : path.join(__dirname, 'uploads');
+  if (process.env.NODE_ENV === 'production') {
+    // Vérifier si /data/uploads est accessible
+    try {
+      fs.accessSync('/data/uploads', fs.constants.R_OK);
+      return '/data/uploads';
+    } catch {
+      return '/tmp/uploads';
+    }
+  }
+  return path.join(__dirname, 'uploads');
 };
 
 app.use('/uploads', express.static(getUploadsPath()));
