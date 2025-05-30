@@ -32,7 +32,6 @@ photo: {
   default: "default.png",
   
 },
-photoPublicId: String, 
   role: { 
     type: String, 
     enum: ["patient", "professional"], 

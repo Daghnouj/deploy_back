@@ -3,10 +3,7 @@ const mongoose = require('mongoose');
 const eventSchema = new mongoose.Schema({
   name: { type: String, required: true },
   images: {
-    type: [{
-      url: String,
-      public_id: String
-    }],
+    type: [String],
     required: true,
     validate: {
       validator: (v) => v.length === 4,

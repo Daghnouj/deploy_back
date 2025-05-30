@@ -1,34 +1,29 @@
 const Event = require('../models/Event');
 const fs = require('fs');
 const path = require('path');
-const cloudinary = require('../config/cloudinary');
+
 // CREATE
 exports.createEvent = async (req, res) => {
   try {
+    // Vérifier si les fichiers existent
     if (!req.files || req.files.length !== 4) {
       return res.status(400).json({ error: 'Il faut exactement 4 images.' });
     }
 
+    // Vérifier que tous les fichiers proviennent du champ 'photo'
     const invalidFiles = req.files.some(file => file.fieldname !== 'photo');
     if (invalidFiles) {
-      // Supprimer les fichiers Cloudinary uploadés
-      req.files.forEach(file => {
-        cloudinary.uploader.destroy(file.filename)
-          .catch(err => console.error('Erreur suppression fichier Cloudinary:', err));
-      });
+      // Nettoyer les fichiers uploadés
+      req.files.forEach(file => fs.unlinkSync(file.path));
       return res.status(400).json({ error: 'Champ de fichier invalide' });
     }
+    const imagePaths = req.files.map(file => 'uploads/events/' + file.filename);
 
-    const images = req.files.map(file => ({
-      url: file.path,
-      public_id: file.filename
-    }));
-
-    const activities = JSON.parse(req.body.activities);
+    const activities = JSON.parse(req.body.activities); // activities doit être JSON.stringify([])
 
     const event = new Event({
       name: req.body.name,
-      images,
+      images: imagePaths,
       address: req.body.address,
       coordinates: req.body.coordinates,
       activities,
@@ -38,13 +33,6 @@ exports.createEvent = async (req, res) => {
     await event.save();
     res.status(201).json(event);
   } catch (error) {
-    // Supprimer les images en cas d'erreur
-    if (req.files) {
-      req.files.forEach(file => {
-        cloudinary.uploader.destroy(file.filename)
-          .catch(err => console.error('Erreur nettoyage:', err));
-      });
-    }
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 };
@@ -53,14 +41,7 @@ exports.createEvent = async (req, res) => {
 exports.getEvents = async (req, res) => {
   try {
     const events = await Event.find();
-    
-    // Formater les URLs
-    const formattedEvents = events.map(event => ({
-      ...event._doc,
-      images: event.images.map(img => img.url)
-    }));
-    
-    res.json(formattedEvents);
+    res.json(events);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur.' });
   }
@@ -71,19 +52,11 @@ exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Événement non trouvé.' });
-    
-    // Formater les URLs si nécessaire
-    const formattedEvent = {
-      ...event._doc,
-      images: event.images.map(img => img.url)
-    };
-    
-    res.json(formattedEvent);
+    res.json(event);
   } catch (error) {
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 };
-
 
 // UPDATE
 exports.updateEvent = async (req, res) => {
@@ -91,20 +64,14 @@ exports.updateEvent = async (req, res) => {
     const oldEvent = await Event.findById(req.params.id);
     if (!oldEvent) return res.status(404).json({ error: 'Événement non trouvé.' });
 
-    let images = oldEvent.images;
-    
+    let imagePaths = oldEvent.images;
     if (req.files && req.files.length === 4) {
-      // Supprimer les anciennes images de Cloudinary
+      // Supprimer les anciennes images
       oldEvent.images.forEach(img => {
-        cloudinary.uploader.destroy(img.public_id)
-          .catch(err => console.error('Erreur suppression ancienne image:', err));
+        const fullPath = path.join(__dirname, '..', img);
+        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
       });
-      
-      // Préparer les nouvelles images
-      images = req.files.map(file => ({
-        url: file.path,
-        public_id: file.filename
-      }));
+      imagePaths = req.files.map(file => 'uploads/events/' + file.filename);
     }
 
     const activities = JSON.parse(req.body.activities);
@@ -113,7 +80,7 @@ exports.updateEvent = async (req, res) => {
       req.params.id,
       {
         name: req.body.name,
-        images,
+        images: imagePaths,
         address: req.body.address,
         coordinates: req.body.coordinates,
         activities,
@@ -124,13 +91,6 @@ exports.updateEvent = async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    // Supprimer les nouvelles images en cas d'erreur
-    if (req.files) {
-      req.files.forEach(file => {
-        cloudinary.uploader.destroy(file.filename)
-          .catch(err => console.error('Erreur nettoyage:', err));
-      });
-    }
     res.status(500).json({ error: 'Erreur serveur.' });
   }
 };
@@ -141,10 +101,10 @@ exports.deleteEvent = async (req, res) => {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ error: 'Événement non trouvé.' });
 
-    // Supprimer les images de Cloudinary
+    // Supprimer les images
     event.images.forEach(img => {
-      cloudinary.uploader.destroy(img.public_id)
-        .catch(err => console.error('Erreur suppression image:', err));
+      const fullPath = path.join(__dirname, '..', img);
+      if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
     });
 
     res.json({ message: 'Événement supprimé.' });
