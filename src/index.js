@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://fantastic-starlight-fcb383.netlify.app"
+  "https://soft-figolla-ea938f.netlify.app/"
 ];
 
 // Configuration CORS étendue
