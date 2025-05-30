@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://golden-torte-33b446.netlify.app" // Ajout du domaine Netlify
+  "https://lighthearted-selkie-fca473.netlify.app" // Ajout du domaine Netlify
 ];
 
 // Configuration CORS étendue

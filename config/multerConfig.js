@@ -1,32 +1,57 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Création des dossiers s'ils n'existent pas
+const createUploadDirs = () => {
+  const baseDir = path.join(__dirname, '../uploads');
+  const dirs = [
+    'videos',
+    'logos',
+    'events',
+    'partenaires',
+    'admins',
+    'messages',
+    'others'
+  ];
+
+  if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir);
+  
+  dirs.forEach(dir => {
+    const dirPath = path.join(baseDir, dir);
+    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+  });
+};
+
+createUploadDirs();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Correction du traitement pour adminPhoto
+    const basePath = path.join(__dirname, '../uploads');
+    
     if (file.fieldname === 'video') {
-      cb(null, 'uploads/videos/');
+      cb(null, path.join(basePath, 'videos'));
     } else if (file.fieldname === 'logo') {
-      cb(null, 'uploads/logos/');
+      cb(null, path.join(basePath, 'logos'));
     } else if (file.fieldname === 'photo') {
-      cb(null, 'uploads/events/');
+      cb(null, path.join(basePath, 'events'));
     } else if (file.fieldname === 'logos') { 
-      cb(null, 'uploads/partenaires/');
+      cb(null, path.join(basePath, 'partenaires'));
     } else if (file.fieldname === "adminPhoto") {
-      cb(null, 'uploads/admins/'); // Correction ici
+      cb(null, path.join(basePath, 'admins'));
     } else if (file.fieldname === "messageImage") {
-      cb(null, 'uploads/messages/');
+      cb(null, path.join(basePath, 'messages'));
     } else {
-      cb(null, 'uploads/others/');
+      cb(null, path.join(basePath, 'others'));
     }
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const fileFilter = (req, file, cb) => {
-  // Autorisation explicite du champ 'photo'
   const allowedImageFields = ['logo', 'photo', 'adminPhoto', 'logos', 'messageImage'];
   
   if (file.fieldname === 'video') {
@@ -35,18 +60,16 @@ const fileFilter = (req, file, cb) => {
       : cb(new Error('Le fichier doit être une vidéo !'), false);
   } 
   else if (allowedImageFields.includes(file.fieldname)) {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const ext = path.extname(file.originalname).toLowerCase();
-    allowedTypes.test(file.mimetype) && allowedTypes.test(ext)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    allowedTypes.includes(file.mimetype)
       ? cb(null, true)
-      : cb(new Error('Le fichier doit être une image !'), false);
+      : cb(new Error('Le fichier doit être une image (JPEG, PNG, GIF) !'), false);
   } 
   else {
     cb(new Error('Champ non supporté'), false);
   }
 };
 
-// Correction de la configuration Multer
 const upload = multer({
   storage,
   fileFilter,
