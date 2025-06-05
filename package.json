@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test:coverage": "cypress run"
+    "test": "jest",
+    "test:coverage": "jest --coverage --watchAll=false"
+
   },
   "keywords": [],
   "author": "",
@@ -51,7 +53,6 @@
   },
   "devDependencies": {
     "artillery": "^2.0.22",
-    "cypress": "^14.4.1",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
     "nodemon": "^3.1.9"
