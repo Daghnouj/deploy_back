@@ -1,36 +1,11 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo
-    container_name: mongo-db
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - app-network
-
   redis:
-    image: redis
+    image: redis:7
     container_name: redis-cache
     ports:
       - "6379:6379"
-    networks:
-      - app-network
-
-  mongo-express:
-    image: mongo-express
-    container_name: mongo-ui
-    restart: always
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
-    depends_on:
-      - mongodb
     networks:
       - app-network
 
@@ -47,20 +22,22 @@ services:
     networks:
       - app-network
 
-  # Optionnel : ton app Node.js
   nodeapp:
     build: .
     container_name: solidarity-back
     ports:
-      - "3000:3000"
+      - "5000:5000
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
-      - mongodb
       - redis
+    env_file:
+      - .env
     networks:
       - app-network
 
 volumes:
-  mongo_data:
   sonarqube_data:
   sonarqube_logs:
 
