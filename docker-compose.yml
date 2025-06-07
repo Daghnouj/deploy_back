@@ -9,19 +9,6 @@ services:
     networks:
       - app-network
 
-  sonarqube:
-    image: sonarqube:lts
-    container_name: sonar-server
-    ports:
-      - "9001:9000"
-    environment:
-      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_logs:/opt/sonarqube/logs
-    networks:
-      - app-network
-
   nodeapp:
     build: .
     container_name: solidarity-back
@@ -34,10 +21,6 @@ services:
       - redis
     networks:
       - app-network
-
-volumes:
-  sonarqube_data:
-  sonarqube_logs:
 
 networks:
   app-network:
