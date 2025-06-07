@@ -32,8 +32,6 @@ services:
       - /app/node_modules
     depends_on:
       - redis
-    env_file:
-      - .env
     networks:
       - app-network
 
