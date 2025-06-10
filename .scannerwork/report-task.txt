@@ -1,0 +1,6 @@
+projectKey=deploy_back
+serverUrl=http://192.168.56.1:9000
+serverVersion=25.6.0.109173
+dashboardUrl=http://192.168.56.1:9000/dashboard?id=deploy_back
+ceTaskId=9b1a8e03-4fad-4138-885e-d0322281b98b
+ceTaskUrl=http://192.168.56.1:9000/api/ce/task?id=9b1a8e03-4fad-4138-885e-d0322281b98b
