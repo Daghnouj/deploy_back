@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://soft-figolla-ea938f.netlify.app/"
+  "https://loquacious-pudding-66a98c.netlify.app"
 ];
 
 // Configuration CORS étendue
