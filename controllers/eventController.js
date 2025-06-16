@@ -5,21 +5,18 @@ const path = require('path');
 // CREATE
 exports.createEvent = async (req, res) => {
   try {
-    // Vérifier si les fichiers existent
     if (!req.files || req.files.length !== 4) {
       return res.status(400).json({ error: 'Il faut exactement 4 images.' });
     }
 
-    // Vérifier que tous les fichiers proviennent du champ 'photo'
     const invalidFiles = req.files.some(file => file.fieldname !== 'photo');
     if (invalidFiles) {
-      // Nettoyer les fichiers uploadés
       req.files.forEach(file => fs.unlinkSync(file.path));
       return res.status(400).json({ error: 'Champ de fichier invalide' });
     }
+    
     const imagePaths = req.files.map(file => 'uploads/events/' + file.filename);
-
-    const activities = JSON.parse(req.body.activities); // activities doit être JSON.stringify([])
+    const activities = JSON.parse(req.body.activities);
 
     const event = new Event({
       name: req.body.name,
@@ -27,7 +24,9 @@ exports.createEvent = async (req, res) => {
       address: req.body.address,
       coordinates: req.body.coordinates,
       activities,
-      description: req.body.description
+      description: req.body.description,
+      website: req.body.website, // Ajout du site web
+      category: req.body.category // Ajout de la catégorie
     });
 
     await event.save();
@@ -66,7 +65,6 @@ exports.updateEvent = async (req, res) => {
 
     let imagePaths = oldEvent.images;
     if (req.files && req.files.length === 4) {
-      // Supprimer les anciennes images
       oldEvent.images.forEach(img => {
         const fullPath = path.join(__dirname, '..', img);
         if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
@@ -84,7 +82,9 @@ exports.updateEvent = async (req, res) => {
         address: req.body.address,
         coordinates: req.body.coordinates,
         activities,
-        description: req.body.description
+        description: req.body.description,
+        website: req.body.website, // Mise à jour du site web
+        category: req.body.category // Mise à jour de la catégorie
       },
       { new: true }
     );

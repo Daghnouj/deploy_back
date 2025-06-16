@@ -16,7 +16,9 @@ const eventSchema = new mongoose.Schema({
     name: { type: String, required: true },
     day:  { type: String, required: true }
   }],
-  description: { type: String, required: true }
+  description: { type: String, required: true },
+  website: String, 
+  category: String 
 });
 
 module.exports = mongoose.model('Event', eventSchema);
