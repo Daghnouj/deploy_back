@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://capable-monstera-1b5435.netlify.app"
+  "https://jazzy-gelato-41ac93.netlify.app"
 ];
 
 // Configuration CORS étendue
