@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://solidar.netlify.app"
+  "https://solidarityy.netlify.app"
 ];
 
 // Configuration CORS étendue
