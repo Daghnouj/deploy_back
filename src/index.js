@@ -22,7 +22,7 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:3000", 
   "http://localhost:5173",
-  "https://solidarityy.netlify.app"
+  "https://solidarity2.netlify.app"
 ];
 
 // Configuration CORS étendue
@@ -126,6 +126,7 @@ const routes = {
   maps: require("../routes/MapsRouter"),
   chat: require("../routes/chatRoutes"),
   event: require("../routes/eventRoutes"),
+
 }; 
 
 // Définition des routes
